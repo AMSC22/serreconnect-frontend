@@ -11,14 +11,16 @@ const SensorCard = ({ sensor }: SensorCardProps) => {
     switch (sensor.type) {
       case 'temperature':
         return <Thermometer className="w-8 h-8 text-green-600" />;
-      case 'humidity_air':
+      case 'humidity':
         return <Droplet className="w-8 h-8 text-blue-500" />;
-      case 'humidity_soil':
+      case 'soil_moisture':
         return <Droplet className="w-8 h-8 text-brown-500" />;
-      case 'luminosity':
+      case 'light_level':
         return <Sun className="w-8 h-8 text-yellow-500" />;
-      case 'fertility':
+      case 'ph_level':
         return <Sprout className="w-8 h-8 text-green-700" />;
+      case 'co2_level':
+        return <Sprout className="w-8 h-8 text-gray-500" />;
       case 'connectivity':
         return <Wifi className="w-8 h-8 text-purple-500" />;
       case 'system_status':
@@ -34,14 +36,16 @@ const SensorCard = ({ sensor }: SensorCardProps) => {
     switch (sensor.type) {
       case 'temperature':
         return 'Température';
-      case 'humidity_air':
+      case 'humidity':
         return 'Humidité (Air)';
-      case 'humidity_soil':
+      case 'soil_moisture':
         return 'Humidité (Sol)';
-      case 'luminosity':
+      case 'light_level':
         return 'Luminosité';
-      case 'fertility':
-        return 'Fertilité';
+      case 'ph_level':
+        return 'pH';
+      case 'co2_level':
+        return 'CO2';
       case 'connectivity':
         return 'Connectivité';
       case 'system_status':

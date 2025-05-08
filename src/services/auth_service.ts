@@ -1,36 +1,21 @@
 import api from './api';
 import { AxiosResponse } from 'axios';
+import { LoginResponse, User } from '../types/User';
 
-// Interface pour la réponse de connexion
-interface LoginResponse {
-  access_token: string;
-  token_type: string;
-}
-
-// Interface pour les données de connexion
-interface LoginCredentials {
-  username: string; // email
+export interface Credentials {
+  username: string;
   password: string;
 }
 
-// Interface pour la réponse de déconnexion
-interface LogoutResponse {
-  message: string;
-}
-
 export const authService = {
-  // Connexion
-  async login(credentials: LoginCredentials): Promise<LoginResponse> {
+  async login(credentials: Credentials): Promise<LoginResponse> {
     try {
-      const response: AxiosResponse<LoginResponse> = await api.post('/auth/login', new URLSearchParams({
-        username: credentials.username,
-        password: credentials.password,
-      }), {
+      const response: AxiosResponse<LoginResponse> = await api.post('/auth/login', credentials, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       });
-      // Stocker le token dans localStorage (utilisé par AuthContext)
+      console.log("response.data.access_token = ", response.data.access_token);
       localStorage.setItem('access_token', response.data.access_token);
       return response.data;
     } catch (error: any) {
@@ -38,15 +23,21 @@ export const authService = {
     }
   },
 
-  // Déconnexion
-  async logout(): Promise<LogoutResponse> {
+  async logout(): Promise<void> {
     try {
-      const response: AxiosResponse<LogoutResponse> = await api.post('/auth/logout');
-      // Supprimer le token de localStorage
+      await api.post('/auth/logout');
       localStorage.removeItem('access_token');
-      return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.detail || 'Erreur lors de la déconnexion');
+    }
+  },
+
+  async getCurrentUser(): Promise<User> {
+    try {
+      const response: AxiosResponse<User> = await api.get('/auth/me');
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || "Erreur lors de la récupération de l'utilisateur");
     }
   },
 };

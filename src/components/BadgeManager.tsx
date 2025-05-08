@@ -5,17 +5,18 @@ import { useState } from 'react';
 
 interface BadgeManagerProps {
   badges: Badge[];
-  onAddBadge: (name: string) => void;
-  onRemoveBadge: (id: string) => void;
+  onAddBadge: (name: string) => Promise<void>;
+  onRemoveBadge: (id: string) => Promise<void>;
+  error?: string | null;
 }
 
-const BadgeManager = ({ badges, onAddBadge, onRemoveBadge }: BadgeManagerProps) => {
+const BadgeManager = ({ badges, onAddBadge, onRemoveBadge, error }: BadgeManagerProps) => {
   const [badgeName, setBadgeName] = useState('');
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (badgeName.trim()) {
-      onAddBadge(badgeName);
+      await onAddBadge(badgeName);
       setBadgeName('');
     }
   };
@@ -26,6 +27,7 @@ const BadgeManager = ({ badges, onAddBadge, onRemoveBadge }: BadgeManagerProps) 
         <Key className="w-6 h-6 text-green-600 mr-2" />
         Gestion des badges RFID
       </h2>
+      {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
       {/* Formulaire pour ajouter un badge */}
       <form onSubmit={handleAdd} className="mb-4">
         <div className="flex space-x-4">
@@ -55,7 +57,7 @@ const BadgeManager = ({ badges, onAddBadge, onRemoveBadge }: BadgeManagerProps) 
               <div>
                 <p className="text-gray-700">{badge.name}</p>
                 <p className="text-sm text-gray-500">
-                  Ajouté le {new Date(badge.createdAt).toLocaleDateString()}
+                  Ajouté le {new Date(badge.created_at).toLocaleDateString()}
                 </p>
               </div>
               <button

@@ -1,7 +1,7 @@
 export interface User {
   id: string;
+  username: string;
   email: string;
-  username?: string;
   is_admin: boolean;
   is_active: boolean;
   created_at: string; // ISO date
@@ -9,22 +9,23 @@ export interface User {
 }
 
 export interface UserCreate {
+  username: string;
   email: string;
   password: string;
-  username?: string;
   is_admin?: boolean;
   is_active?: boolean;
 }
 
 export interface UserUpdate {
+  username?: string;
   email?: string;
   password?: string;
-  username?: string;
   is_admin?: boolean;
   is_active?: boolean;
 }
 
-export interface UserCount {
-  admin: number;
-  non_admin: number;
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
+  user: User;
 }

@@ -1,50 +1,62 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { alertService } from '../services/alert_service';
 import { Alert } from '../types/Alert';
+import { useAuth } from '../context/AuthContext';
+import { greenhouseService } from '../services/greenhouse_service';
 
 interface UseAlertsResult {
   alerts: Alert[];
   markAsRead: (id: string) => void;
   loading: boolean;
+  error: string | null;
 }
 
-const mockAlerts: Alert[] = [
-  {
-    id: '1',
-    message: 'Température trop élevée (> 35°C)',
-    timestamp: '2025-04-24T14:30:00',
-    read: false,
-  },
-  {
-    id: '2',
-    message: 'Humidité du sol faible (< 20%)',
-    timestamp: '2025-04-24T12:15:00',
-    read: true,
-  },
-  {
-    id: '3',
-    message: 'Luminosité insuffisante (< 500 lux)',
-    timestamp: '2025-04-24T10:00:00',
-    read: false,
-  },
-  {
-    id: '4',
-    message: 'Serrure déverrouillée',
-    timestamp: '2025-04-23T18:45:00',
-    read: true,
-  },
-];
-
 export const useAlerts = (): UseAlertsResult => {
-  const [alerts, setAlerts] = useState<Alert[]>(mockAlerts);
-  const [loading, setLoading] = useState<boolean>(false); // Simule un chargement
+  const { user } = useAuth();
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const markAsRead = (id: string) => {
-    setAlerts((prev) =>
-      prev.map((alert) =>
-        alert.id === id ? { ...alert, read: true } : alert
-      )
-    );
+  useEffect(() => {
+    const fetchAlerts = async () => {
+      if (!user) return;
+      try {
+        setLoading(true);
+        let data: Alert[] = [];
+        if (user.is_admin) {
+          // Admins peuvent voir toutes les alertes
+          data = await alertService.getAllAlerts();
+        } else {
+          // Utilisateurs standards : récupérer la serre de l'utilisateur
+          const greenhouses = await greenhouseService.getGreenhousesByUserId(user.id);
+          if (greenhouses.length > 0) {
+            data = await alertService.getAlertsByGreenhouseId(greenhouses[0].id);
+          }
+        }
+        setAlerts(data);
+        setError(null);
+      } catch (err: any) {
+        setError(err.message || 'Erreur lors de la récupération des alertes');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAlerts();
+  }, [user]);
+
+  const markAsRead = async (id: string) => {
+    try {
+      await alertService.resolveAlert(id);
+      setAlerts((prev) =>
+        prev.map((alert) =>
+          alert.id === id ? { ...alert, is_resolved: true } : alert
+        )
+      );
+    } catch (err: any) {
+      setError(err.message || "Erreur lors de la mise à jour de l'alerte");
+    }
   };
 
-  return { alerts, markAsRead, loading };
+  return { alerts, markAsRead, loading, error };
 };

@@ -2,6 +2,7 @@ import React from 'react';
 import AuthForm from '../components/AuthForm';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { greenhouseService } from '../services/greenhouse_service';
 
 const Login = () => {
   const { login } = useAuth();
@@ -9,21 +10,18 @@ const Login = () => {
 
   const handleLogin = async (data: { email: string; password: string }) => {
     try {
-      console.log('Tentative de connexion avec:', data);
-      const user = await login(data.email, data.password);
-      if (user) {
-        console.log('Connexion réussie, user =', user);
-        // Rediriger vers /admin si l'utilisateur est admin, sinon vers /
-        const redirectPath = user.isAdmin ? '/admin' : '/';
-        console.log('Redirection vers', redirectPath);
-        navigate(redirectPath, { replace: true });
-        return true;
-      } else {
-        console.log('Échec de la connexion');
-        return false;
-      }
+      console.log('Login: tentative de connexion', data.email);
+      const response = await login(data.email, data.password);
+      console.log('Login: connexion réussie', response.user);
+
+      // Vérifier si l'utilisateur a des serres
+      const greenhouses = await greenhouseService.getGreenhousesByUserId(response.user.id);
+      const redirectPath = response.user.is_admin ? '/admin' : '/';
+      console.log('Login: redirection vers', redirectPath);
+      navigate(redirectPath, { replace: true });
+      return true;
     } catch (error) {
-      console.error('Erreur lors de la connexion:', error);
+      console.error('Login: erreur lors de la connexion', error);
       return false;
     }
   };

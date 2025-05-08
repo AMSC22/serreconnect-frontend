@@ -1,8 +1,8 @@
-import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Home from '../pages/Home';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
+import ResetPassword from '../pages/ResetPassword';
 import History from '../pages/History';
 import Alerts from '../pages/Alerts';
 import Settings from '../pages/Settings';
@@ -11,16 +11,19 @@ import Privacy from '../pages/Privacy';
 import FAQ from '../pages/FAQ';
 import ForgotPassword from '../pages/ForgotPassword';
 import AdminDashboard from '../pages/AdminDashboard';
+import GreenhouseCreate from '../pages/GreenhouseCreate';
+import GreenhouseDashboard from '../pages/GreenhouseDashboard';
 import ProtectedRoute from '../components/ProtectedRoute';
 import AdminRoute from '../components/AdminRoute';
+import AdminSettings from '../pages/AdminSettings';
 
 const AppRoutes = () => {
-  console.log('AppRoutes: rendu des routes');
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/faq" element={<FAQ />} />
@@ -33,7 +36,23 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/history"
+        path="/greenhouse/create"
+        element={
+          <ProtectedRoute>
+            <GreenhouseCreate />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/greenhouse/:greenhouseId"
+        element={
+          <ProtectedRoute>
+            <GreenhouseDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/history/:greenhouseId"
         element={
           <ProtectedRoute>
             <History />
@@ -41,7 +60,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/alerts"
+        path="/alerts/:greenhouseId"
         element={
           <ProtectedRoute>
             <Alerts />
@@ -49,7 +68,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings"
+        path="/settings/:greenhouseId"
         element={
           <ProtectedRoute>
             <Settings />
@@ -64,7 +83,14 @@ const AppRoutes = () => {
           </AdminRoute>
         }
       />
-      {/* Ajout d'une route de secours pour déboguer */}
+      <Route
+        path="/admin/settings"
+        element={
+          <ProtectedRoute>
+            <AdminSettings />
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<div>Page non trouvée</div>} />
     </Routes>
   );
