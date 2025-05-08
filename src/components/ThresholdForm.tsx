@@ -10,28 +10,28 @@ interface ThresholdFormProps {
 const ThresholdForm = ({ thresholds, onUpdate }: ThresholdFormProps) => {
   const sensors = [
     {
-      type: 'temperature',
+      type: 'temperature' as keyof Thresholds,
       label: 'Température (°C)',
       icon: <Thermometer className="w-6 h-6 text-green-600" />,
     },
     {
-      type: 'humidity_air',
+      type: 'humidity' as keyof Thresholds,
       label: 'Humidité (Air) (%)',
       icon: <Droplet className="w-6 h-6 text-blue-500" />,
     },
     {
-      type: 'humidity_soil',
+      type: 'soil_moisture' as keyof Thresholds,
       label: 'Humidité (Sol) (%)',
       icon: <Droplet className="w-6 h-6 text-brown-500" />,
     },
     {
-      type: 'luminosity',
+      type: 'light_level' as keyof Thresholds,
       label: 'Luminosité (lux)',
       icon: <Sun className="w-6 h-6 text-yellow-500" />,
     },
     {
-      type: 'fertility',
-      label: 'Fertilité',
+      type: 'ph_level' as keyof Thresholds,
+      label: 'pH',
       icon: <Sprout className="w-6 h-6 text-green-700" />,
     },
   ];

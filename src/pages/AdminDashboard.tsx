@@ -1,84 +1,138 @@
-import React, { useState } from 'react';
-import { Users, BarChart } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User } from '../types/User';
+import { Greenhouse } from '../types/Greenhouse';
+import { Settings } from '../types/Settings';
+import { userService } from '../services/user_service';
+import { greenhouseService } from '../services/greenhouse_service';
+import { settingsService } from '../services/settings_service';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ThresholdForm from '../components/ThresholdForm';
+import { Thresholds } from '../types/Thresholds';
 
 const AdminDashboard = () => {
-  // Données mockées pour les utilisateurs
-  const [users, setUsers] = useState([
-    { id: '1', username: 'admin', email: 'admin@example.com', isAdmin: true },
-    { id: '2', username: 'user1', email: 'user1@example.com', isAdmin: false },
-    { id: '3', username: 'user2', email: 'user2@example.com', isAdmin: false },
-  ]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [greenhouses, setGreenhouses] = useState<Greenhouse[]>([]);
+  const [defaultSettings, setDefaultSettings] = useState<Settings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Données mockées pour les statistiques
-  const stats = {
-    totalUsers: users.length,
-    totalGreenhouses: 5,
-    alertsLast24h: 10,
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const userData = await userService.getAllUsers();
+        const greenhouseData = await greenhouseService.getAllGreenhouses();
+        const settingsData = await settingsService.getSettingsById('default'); // Supposons un ID 'default'
+        setUsers(userData.filter((u) => !u.is_admin));
+        setGreenhouses(greenhouseData);
+        setDefaultSettings(settingsData);
+        setError(null);
+      } catch (err: any) {
+        console.error('AdminDashboard: erreur lors de la récupération des données', err);
+        setError(err.message || 'Erreur lors de la récupération des données');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleUpdateDefaultThresholds = async (newThresholds: Partial<Thresholds>) => {
+    try {
+      const updatedSettings: Partial<Settings> = {};
+      if (newThresholds.temperature) {
+        updatedSettings.temperature_min = newThresholds.temperature.min;
+        updatedSettings.temperature_max = newThresholds.temperature.max;
+      }
+      if (newThresholds.humidity) {
+        updatedSettings.humidity_min = newThresholds.humidity.min;
+        updatedSettings.humidity_max = newThresholds.humidity.max;
+      }
+      if (newThresholds.soil_moisture) {
+        updatedSettings.soil_moisture_min = newThresholds.soil_moisture.min;
+        updatedSettings.soil_moisture_max = newThresholds.soil_moisture.max;
+      }
+      if (newThresholds.light_level) {
+        updatedSettings.light_level_min = newThresholds.light_level.min;
+        updatedSettings.light_level_max = newThresholds.light_level.max;
+      }
+      if (newThresholds.ph_level) {
+        updatedSettings.ph_level_min = newThresholds.ph_level.min;
+        updatedSettings.ph_level_max = newThresholds.ph_level.max;
+      }
+      await settingsService.updateDefaultSettings('default', updatedSettings);
+      const updatedDefaultSettings = await settingsService.getSettingsById('default');
+      setDefaultSettings(updatedDefaultSettings);
+    } catch (err: any) {
+      console.error('AdminDashboard: erreur lors de la mise à jour des seuils', err);
+      setError(err.message || 'Erreur lors de la mise à jour des seuils');
+    }
   };
 
-  const handleDeleteUser = (id: string) => {
-    setUsers((prev) => prev.filter((user) => user.id !== id));
-  };
+  if (loading) return <LoadingSpinner />;
+  if (error) return <p className="text-red-500">{error}</p>;
+
+  const thresholds: Thresholds = defaultSettings
+    ? {
+        temperature: { min: defaultSettings.temperature_min || 0, max: defaultSettings.temperature_max || 0 },
+        humidity: { min: defaultSettings.humidity_min || 0, max: defaultSettings.humidity_max || 0 },
+        soil_moisture: { min: defaultSettings.soil_moisture_min || 0, max: defaultSettings.soil_moisture_max || 0 },
+        light_level: { min: defaultSettings.light_level_min || 0, max: defaultSettings.light_level_max || 0 },
+        ph_level: { min: defaultSettings.ph_level_min || 0, max: defaultSettings.ph_level_max || 0 },
+      }
+    : {
+        temperature: { min: 0, max: 0 },
+        humidity: { min: 0, max: 0 },
+        soil_moisture: { min: 0, max: 0 },
+        light_level: { min: 0, max: 0 },
+        ph_level: { min: 0, max: 0 },
+      };
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto p-4 space-y-6">
       <h1 className="text-3xl font-bold text-green-600">Tableau de bord administrateur</h1>
-      {/* Statistiques */}
-      <div className="bg-white p-4 rounded-lg shadow-md">
-        <h2 className="text-xl font-bold text-gray-700 mb-4 flex items-center">
-          <BarChart className="w-6 h-6 text-green-600 mr-2" />
-          Statistiques
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-4 bg-gray-50 rounded-md">
-            <p className="text-gray-700 font-semibold">Utilisateurs</p>
-            <p className="text-2xl text-green-600">{stats.totalUsers}</p>
-          </div>
-          <div className="p-4 bg-gray-50 rounded-md">
-            <p className="text-gray-700 font-semibold">Serres</p>
-            <p className="text-2xl text-green-600">{stats.totalGreenhouses}</p>
-          </div>
-          <div className="p-4 bg-gray-50 rounded-md">
-            <p className="text-gray-700 font-semibold">Alertes (24h)</p>
-            <p className="text-2xl text-green-600">{stats.alertsLast24h}</p>
-          </div>
-        </div>
-      </div>
-      {/* Gestion des utilisateurs */}
-      <div className="bg-white p-4 rounded-lg shadow-md">
-        <h2 className="text-xl font-bold text-gray-700 mb-4 flex items-center">
-          <Users className="w-6 h-6 text-green-600 mr-2" />
-          Gestion des utilisateurs
-        </h2>
-        <div className="space-y-4">
-          {users.length > 0 ? (
-            users.map((user) => (
-              <div
-                key={user.id}
-                className="flex justify-between items-center p-2 bg-gray-50 rounded-md"
-              >
-                <div>
-                  <p className="text-gray-700">{user.username}</p>
-                  <p className="text-sm text-gray-500">{user.email}</p>
-                  <p className="text-sm text-gray-500">
-                    {user.isAdmin ? 'Administrateur' : 'Utilisateur'}
-                  </p>
-                </div>
-                {!user.isAdmin && (
-                  <button
-                    onClick={() => handleDeleteUser(user.id)}
-                    className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 text-sm"
-                  >
-                    Supprimer
-                  </button>
-                )}
-              </div>
-            ))
-          ) : (
-            <p className="text-gray-500">Aucun utilisateur.</p>
-          )}
-        </div>
-      </div>
+
+      <section className="bg-white p-6 rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold text-gray-700 mb-4">Utilisateurs ({users.length})</h2>
+        <ul className="space-y-4">
+          {users.map((user) => (
+            <li key={user.id} className="p-4 bg-gray-100 rounded-md">
+              <p className="text-gray-700">{user.username} ({user.email})</p>
+              <p className="text-sm text-gray-500">
+                Inscrit le {new Date(user.created_at).toLocaleDateString()}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="bg-white p-6 rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold text-gray-700 mb-4">Serres ({greenhouses.length})</h2>
+        <ul className="space-y-4">
+          {users.map((user) => {
+            const userGreenhouses = greenhouses.filter((g) => g.user_id === user.id);
+            return (
+              <li key={user.id} className="p-4 bg-gray-100 rounded-md">
+                <h3 className="text-lg font-medium">{user.username} ({userGreenhouses.length} serres)</h3>
+                <ul className="mt-2 space-y-2">
+                  {userGreenhouses.map((greenhouse) => (
+                    <li key={greenhouse.id} className="p-2 bg-gray-50 rounded-md">
+                      <p className="text-gray-700">{greenhouse.name}</p>
+                      <p className="text-sm text-gray-500">{greenhouse.location || 'Sans localisation'}</p>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      <section className="bg-white p-6 rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold text-gray-700 mb-4">Paramètres par défaut des capteurs</h2>
+        <ThresholdForm thresholds={thresholds} onUpdate={handleUpdateDefaultThresholds} />
+      </section>
     </div>
   );
 };

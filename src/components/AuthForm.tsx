@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
-import { User, Mail, Lock, Book } from 'lucide-react';
+import { User, Mail, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+interface LoginFormData {
+  email: string;
+  password: string;
+}
+
+interface RegisterFormData {
+  username: string;
+  email: string;
+  password: string;
+}
 
 interface AuthFormProps {
   mode: 'login' | 'register';
-  onSubmit: (data: {
-    username?: string;
-    email: string;
-    password: string;
-  }) => Promise<boolean>;
+  onSubmit: (data: LoginFormData | RegisterFormData) => Promise<boolean>;
 }
 
 const AuthForm = ({ mode, onSubmit }: AuthFormProps) => {
@@ -20,16 +27,20 @@ const AuthForm = ({ mode, onSubmit }: AuthFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('AuthForm: soumission du formulaire', { mode, email, username, acceptTerms });
     setError('');
     if (!acceptTerms) {
       setError("Vous devez accepter les conditions d'utilisation.");
+      console.log('AuthForm: erreur - conditions non acceptées');
       return;
     }
     const data = mode === 'login' ? { email, password } : { username, email, password };
+    console.log('AuthForm: envoi des données', data);
     const success = await onSubmit(data);
-    console.log("success Auth = ", success);
+    console.log('AuthForm: résultat de la soumission, success =', success);
     if (!success) {
       setError(mode === 'login' ? 'Identifiants incorrects' : 'Inscription échouée');
+      console.log('AuthForm: erreur affichée', error);
     }
   };
 
@@ -39,30 +50,30 @@ const AuthForm = ({ mode, onSubmit }: AuthFormProps) => {
         {mode === 'login' ? 'Connexion' : 'Inscription'}
       </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
-      {mode === 'register' && (
-        <div className="flex items-center space-x-2">
-          <User className="w-5 h-5 text-green-600" />
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Nom d'utilisateur"
-            className="flex-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-600"
-            required
-          />
-        </div>
-        )}
+        {mode === 'register' && (
           <div className="flex items-center space-x-2">
-            <Mail className="w-5 h-5 text-green-600" />
+            <User className="w-5 h-5 text-green-600" />
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Adresse e-mail"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Nom d'utilisateur"
               className="flex-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-600"
               required
             />
           </div>
+        )}
+        <div className="flex items-center space-x-2">
+          <Mail className="w-5 h-5 text-green-600" />
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Adresse e-mail"
+            className="flex-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-600"
+            required
+          />
+        </div>
         <div className="flex items-center space-x-2">
           <Lock className="w-5 h-5 text-green-600" />
           <input
@@ -78,7 +89,7 @@ const AuthForm = ({ mode, onSubmit }: AuthFormProps) => {
           <input
             type="checkbox"
             checked={acceptTerms}
-            placeholder="n"
+            placeholder='M'
             onChange={(e) => setAcceptTerms(e.target.checked)}
             className="h-4 w-4 text-green-600 focus:ring-green-600 border-gray-300 rounded"
             required
@@ -106,10 +117,7 @@ const AuthForm = ({ mode, onSubmit }: AuthFormProps) => {
         {mode === 'login' ? (
           <>
             <p>
-              <Link
-                to="/forgot-password"
-                className="text-green-600 hover:underline"
-              >
+              <Link to="/forgot-password" className="text-green-600 hover:underline">
                 Mot de passe oublié ?
               </Link>
             </p>

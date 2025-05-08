@@ -1,85 +1,99 @@
-import React, { useState } from 'react';
-import SensorCard from '../components/SensorCard';
-import ControlPanel from '../components/ControlPanel';
-import VideoStream from '../components/VideoStream';
-import AlertCard from '../components/AlertCard';
-import { SensorData } from '../types/SensorData';
-import { ActuatorState } from '../types/ActuatorState';
-import { Alert } from '../types/Alert';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Greenhouse } from '../types/Greenhouse';
+import { greenhouseService } from '../services/greenhouse_service';
+import { useAuth } from '../context/AuthContext';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const Home = () => {
-  // Données mockées pour les capteurs
-  const sensorData: SensorData[] = [
-    { type: 'temperature', value: 25.3, unit: '°C' },
-    { type: 'humidity_air', value: 65, unit: '%' },
-    { type: 'humidity_soil', value: 45, unit: '%' },
-    { type: 'luminosity', value: 1200, unit: 'lux' },
-    { type: 'fertility', value: 'Élevé', unit: '' },
-    { type: 'connectivity', value: 'Stable', unit: '' },
-    { type: 'system_status', value: 'Actif', unit: '' },
-    { type: 'intrusion', value: 'Aucune', unit: '' },
-  ];
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [greenhouses, setGreenhouses] = useState<Greenhouse[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // État mocké pour les équipements
-  const [actuators, setActuators] = useState<ActuatorState>({
-    fan1: false,
-    fan2: false,
-    irrigation: false,
-    window: false,
-    lock: false,
-    lighting: false,
-    heating: 22,
-    camera: false,
-    ventilation: 60,
-    cameraAngle: 0, // Angle de la caméra (0 à 180 degrés)
-    cameraZoom: 1, // Zoom de la caméra (1x à 5x)
-  });
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user || !localStorage.getItem('access_token')) {
+        setError('Utilisateur non connecté');
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        const greenhouseData: Greenhouse[] = await greenhouseService.getGreenhousesByUserId(user.id);
+        setGreenhouses(greenhouseData);
+        setError(null);
+      } catch (err: any) {
+        console.error('Home: erreur lors de la récupération des données', err);
+        setError(err.message || 'Erreur lors de la récupération des données');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Données mockées pour les alertes
-  const alerts: Alert[] = [
-    {
-      id: '1',
-      message: 'Température trop élevée (> 35°C)',
-      timestamp: '2025-04-24T14:30:00',
-      read: false,
-    },
-    {
-      id: '2',
-      message: 'Humidité du sol faible (< 20%)',
-      timestamp: '2025-04-24T12:15:00',
-      read: true,
-    },
-  ];
+    fetchData();
+  }, []);
 
-  // Fonction pour simuler le changement d’état des équipements
-  const handleToggle = (device: keyof ActuatorState, state: boolean | number) => {
-    setActuators((prev) => ({ ...prev, [device]: state }));
+  const handleAccessGreenhouse = (greenhouseId: string) => {
+    navigate(`/greenhouse/${greenhouseId}`);
   };
 
+  const handleCreateGreenhouse = () => {
+    navigate('/greenhouse/create');
+  };
+
+  if (loading) return <LoadingSpinner />;
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-green-600">Tableau de bord</h1>
-      {/* Capteurs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {sensorData.map((sensor) => (
-          <SensorCard key={sensor.type} sensor={sensor} />
-        ))}
-      </div>
-      {/* Flux vidéo */}
-      <VideoStream  actuators={actuators} onToggle={handleToggle} />
-      {/* Alertes */}
-      <div className="bg-white p-4 rounded-lg shadow-md">
-        <h2 className="text-xl font-bold text-gray-700 mb-4">Dernières alertes</h2>
-        <div className="space-y-4">
-          {alerts.length > 0 ? (
-            alerts.map((alert) => <AlertCard key={alert.id} alert={alert} />)
-          ) : (
-            <p className="text-gray-500">Aucune alerte pour le moment.</p>
-          )}
+    <div className="container mx-auto p-4 space-y-6">
+      <h1 className="text-3xl font-bold text-green-600">Bienvenue, {user?.username || 'Utilisateur'}</h1>
+      {error && <p className="text-red-500">{error}</p>}
+
+      {greenhouses.length === 0 ? (
+        <div className="bg-white p-6 rounded-lg shadow-md text-center">
+          <h2 className="text-2xl font-semibold text-gray-700 mb-4">
+            Bienvenue sur votre tableau de bord !
+          </h2>
+          <p className="text-gray-500 mb-6">
+            Vous n'avez pas encore de serre configurée. Créez votre première serre pour commencer à surveiller vos cultures.
+          </p>
+          <button
+            onClick={handleCreateGreenhouse}
+            className="py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700"
+          >
+            Créez votre serre maintenant
+          </button>
         </div>
-      </div>
-      {/* Contrôles */}
-      <ControlPanel actuators={actuators} onToggle={handleToggle} />
+      ) : (
+        <section className="bg-white p-6 rounded-lg shadow-md">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-700">Vos serres</h2>
+            <button
+              onClick={handleCreateGreenhouse}
+              className="py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700"
+            >
+              Créez une nouvelle serre
+            </button>
+          </div>
+          <ul className="space-y-4">
+            {greenhouses.map((greenhouse) => (
+              <li key={greenhouse.id} className="p-4 bg-gray-100 rounded-md flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-medium">{greenhouse.name}</h3>
+                  <p className="text-gray-500">{greenhouse.location || 'Sans localisation'}</p>
+                </div>
+                <button
+                  onClick={() => handleAccessGreenhouse(greenhouse.id)}
+                  className="py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Accédez à votre serre
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 };

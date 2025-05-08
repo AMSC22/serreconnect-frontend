@@ -1,75 +1,58 @@
-import React from 'react';
-import { useState } from 'react';
-import { Mail } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../services/api';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setMessage('');
-    // Simulation d’envoi d’e-mail (mocké)
-    if (email) {
-      setMessage('Un e-mail de réinitialisation a été envoyé (simulation).');
-    } else {
-      setError('Veuillez entrer une adresse e-mail.');
+    try {
+      setError(null);
+      setMessage(null);
+      const response = await api.post('/auth/forgot-password', { email });
+      setMessage(response.data.message);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Erreur lors de la demande de réinitialisation');
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-6 rounded-lg shadow-md max-w-md mx-auto">
-        <h2 className="text-2xl font-bold text-green-600 mb-4">
-          Réinitialiser le mot de passe
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-bold text-green-600 mb-6 text-center">
+          Réinitialisation du mot de passe
         </h2>
+        {message && <p className="text-green-500 mb-4">{message}</p>}
+        {error && <p className="text-red-500 mb-4">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex items-center space-x-2">
-            <Mail className="w-5 h-5 text-green-600" />
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              Adresse e-mail
+            </label>
             <input
+              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Adresse e-mail"
-              className="flex-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-600"
               required
+              className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-600"
+              placeholder="votre@email.com"
             />
           </div>
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          {message && <p className="text-green-600 text-sm">{message}</p>}
           <button
             type="submit"
-            className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            className="w-full py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-600"
           >
-            Envoyer l’e-mail de réinitialisation
+            Envoyer le lien de réinitialisation
           </button>
         </form>
-        <div className="mt-4 text-center text-sm text-gray-700">
-          <p>
-            Retour à la{' '}
-            <Link to="/login" className="text-green-600 hover:underline">
-              connexion
-            </Link>
-          </p>
-        </div>
-        <div className="mt-4 text-center text-sm text-gray-500">
-          <p>
-            <Link to="/terms" className="text-green-600 hover:underline">
-              Conditions d’utilisation
-            </Link>{' '}
-            |{' '}
-            <Link to="/privacy" className="text-green-600 hover:underline">
-              Politique de confidentialité
-            </Link>{' '}
-            |{' '}
-            <Link to="/faq" className="text-green-600 hover:underline">
-              FAQ
-            </Link>
-          </p>
-        </div>
+        <p className="mt-4 text-center text-sm text-gray-600">
+          Retour à la <a href="/login" className="text-green-600 hover:underline">connexion</a>
+        </p>
       </div>
     </div>
   );

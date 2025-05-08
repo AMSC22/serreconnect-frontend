@@ -1,7 +1,12 @@
+export interface Threshold {
+  min: number;
+  max: number;
+}
+
 export interface Thresholds {
-    temperature: { min: number; max: number };
-    humidity_air: { min: number; max: number };
-    humidity_soil: { min: number; max: number };
-    luminosity: { min: number; max: number };
-    fertility: { min: number; max: number };
-  }
+  temperature: Threshold;
+  humidity: Threshold;
+  soil_moisture: Threshold;
+  light_level: Threshold;
+  ph_level: Threshold;
+}

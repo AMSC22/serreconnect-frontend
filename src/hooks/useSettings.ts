@@ -1,51 +1,70 @@
-import { useState } from 'react';
-import { Thresholds } from '../types/Thresholds';
+import { useState, useEffect } from 'react';
+import { settingsService } from '../services/settings_service';
+import { badgeService } from '../services/badge_service';
+import { Settings, SettingsUpdate } from '../types/Settings';
 import { Badge } from '../types/Badge';
 
-interface UseSettingsResult {
-  thresholds: Thresholds;
-  updateThresholds: (newThresholds: Partial<Thresholds>) => void;
-  badges: Badge[];
-  addBadge: (name: string) => void;
-  removeBadge: (id: string) => void;
-}
+export const useSettings = (userId: string, greenhouseId: string) => {
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [badges, setBadges] = useState<Badge[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-const mockThresholds: Thresholds = {
-  temperature: { min: 15, max: 35 },
-  humidity_air: { min: 50, max: 80 },
-  humidity_soil: { min: 30, max: 60 },
-  luminosity: { min: 500, max: 2000 },
-  fertility: { min: 6, max: 9 },
-};
-
-const mockBadges: Badge[] = [
-  { id: '1', name: 'Employé 1', createdAt: '2025-04-20T09:00:00' },
-  { id: '2', name: 'Technicien', createdAt: '2025-04-21T14:30:00' },
-];
-
-export const useSettings = (): UseSettingsResult => {
-  const [thresholds, setThresholds] = useState<Thresholds>(mockThresholds);
-  const [badges, setBadges] = useState<Badge[]>(mockBadges);
-
-  const updateThresholds = (newThresholds: Partial<Thresholds>) => {
-    setThresholds((prev) => ({
-      ...prev,
-      ...newThresholds,
-    }));
-  };
-
-  const addBadge = (name: string) => {
-    const newBadge: Badge = {
-      id: crypto.randomUUID(),
-      name,
-      createdAt: new Date().toISOString(),
+  useEffect(() => {
+    const fetchSettingsAndBadges = async () => {
+      if (!userId) {
+        setError('Utilisateur non spécifié');
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        const settingsData = await settingsService.getSettingsByGreenhouseId(userId, greenhouseId);
+        const badgesData = await badgeService.getBadgesByGreenhouseId(userId, greenhouseId);
+        setSettings(settingsData);
+        setBadges(badgesData);
+        setError(null);
+      } catch (err: any) {
+        console.error('useSettings: erreur lors de la récupération des données', err);
+        setError(err.message || 'Erreur lors de la récupération des paramètres et badges');
+      } finally {
+        setLoading(false);
+      }
     };
-    setBadges((prev) => [...prev, newBadge]);
+
+    fetchSettingsAndBadges();
+  }, [userId, greenhouseId]);
+
+  const updateSettings = async (newSettings: SettingsUpdate) => {
+    if (!settings) return;
+    try {
+      const updatedSettings = await settingsService.updateSettingsUser(settings.id, newSettings);
+      setSettings(updatedSettings);
+    } catch (err: any) {
+      console.error('useSettings: erreur lors de la mise à jour des paramètres', err);
+      setError(err.message || 'Erreur lors de la mise à jour des paramètres');
+    }
   };
 
-  const removeBadge = (id: string) => {
-    setBadges((prev) => prev.filter((badge) => badge.id !== id));
+  const addBadge = async (name: string) => {
+    try {
+      const newBadge = await badgeService.createBadge({ name, user_id: userId, greenhouse_id: greenhouseId });
+      setBadges((prev) => [...prev, newBadge]);
+    } catch (err: any) {
+      console.error('useSettings: erreur lors de l’ajout du badge', err);
+      setError(err.message || 'Erreur lors de l’ajout du badge');
+    }
   };
 
-  return { thresholds, updateThresholds, badges, addBadge, removeBadge };
+  const removeBadge = async (id: string) => {
+    try {
+      await badgeService.deleteBadge(id);
+      setBadges((prev) => prev.filter((badge) => badge.id !== id));
+    } catch (err: any) {
+      console.error('useSettings: erreur lors de la suppression du badge', err);
+      setError(err.message || 'Erreur lors de la suppression du badge');
+    }
+  };
+
+  return { settings, updateSettings, badges, addBadge, removeBadge, loading, error };
 };

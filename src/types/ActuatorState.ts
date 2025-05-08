@@ -8,6 +8,6 @@ export interface ActuatorState {
   heating: number;
   camera: boolean;
   ventilation: number;
-  cameraAngle: number; // Angle de la caméra (0 à 180 degrés)
-  cameraZoom: number; // Zoom de la caméra (1x à 5x)
+  cameraAngle: number;  // Angle de la caméra (0 à 180 degrés)
+  cameraZoom: number;  // Zoom de la caméra (1x à 5x)
 }
