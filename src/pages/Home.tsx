@@ -25,7 +25,6 @@ const Home = () => {
         setGreenhouses(greenhouseData);
         setError(null);
       } catch (err: any) {
-        console.error('Home: erreur lors de la récupération des données', err);
         setError(err.message || 'Erreur lors de la récupération des données');
       } finally {
         setLoading(false);

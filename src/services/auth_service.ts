@@ -15,7 +15,6 @@ export const authService = {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       });
-      console.log("response.data.access_token = ", response.data.access_token);
       localStorage.setItem('access_token', response.data.access_token);
       return response.data;
     } catch (error: any) {

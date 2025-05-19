@@ -24,7 +24,6 @@ const Alerts = () => {
         setAlerts(alertData);
         setError(null);
       } catch (err: any) {
-        console.error('Alerts: erreur lors de la récupération des alertes', err);
         setError(err.message || 'Erreur lors de la récupération des alertes');
       } finally {
         setLoading(false);

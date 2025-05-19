@@ -56,7 +56,6 @@ const GreenhouseCreate = () => {
         });
         setError(null);
       } catch (err: any) {
-        console.error('GreenhouseCreate: erreur lors de la récupération des paramètres par défaut', err);
         setError(err.message || 'Erreur lors de la récupération des paramètres par défaut');
       } finally {
         setLoading(false);
@@ -182,7 +181,6 @@ const GreenhouseCreate = () => {
 
       navigate(`/greenhouse/${newGreenhouse.id}`);
     } catch (err: any) {
-      console.error('GreenhouseCreate: erreur lors de la création', err);
       setError(err.message || 'Erreur lors de la création de la serre, des paramètres ou des actionneurs.');
       setLoading(false);
     }

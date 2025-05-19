@@ -77,7 +77,6 @@ const GreenhouseDashboard = () => {
         setAlerts(alertData.filter((alert) => !alert.is_resolved).slice(0, 2));
         setError(null);
       } catch (err: any) {
-        console.error('GreenhouseDashboard: erreur lors de la récupération des données', err);
         setError(err.message || 'Erreur lors de la récupération des données');
       } finally {
         setLoading(false);
@@ -93,14 +92,13 @@ const GreenhouseDashboard = () => {
       const actuatorList = await actuatorService.getActuatorsByGreenhouseId(greenhouseId);
       const actuator = actuatorList.find((a) => a.type === device);
       if (!actuator) {
-        console.error(`Actionneur de type ${device} non trouvé`);
+        setError(`Actionneur de type ${device} non trouvé`);
         return;
       }
       await actuatorService.updateActuator(actuator.id, Number(state));
       setActuators((prev) => ({ ...prev, [device]: state }));
     } catch (err: any) {
-      console.error('GreenhouseDashboard: erreur lors de la mise à jour de l’actionneur', err);
-      setError(err.message || 'Erreur lors de la mise à jour de l’actionneur');
+      setError(err.message || "Erreur lors de la mise à jour de l'actionneur");
     }
   };
 

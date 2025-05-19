@@ -8,6 +8,10 @@ interface ControlPanelProps {
   greenhouseId?: string;
 }
 
+function isBooleanActuator(type: keyof ActuatorState): type is 'fan1' | 'fan2' | 'irrigation' | 'window' | 'lock' | 'lighting' | 'camera' {
+  return ['fan1', 'fan2', 'irrigation', 'window', 'lock', 'lighting', 'camera'].includes(type);
+}
+
 const ControlPanel = ({ greenhouseId, onToggle }: ControlPanelProps) => {
   const [actuators, setActuators] = useState<ActuatorState>({
     fan1: false,
@@ -35,23 +39,12 @@ const ControlPanel = ({ greenhouseId, onToggle }: ControlPanelProps) => {
         const actuatorList = await actuatorService.getActuatorsByGreenhouseId(greenhouseId);
         const initialState: ActuatorState = { ...actuators };
 
-        // Définir les clés qui attendent un booléen
-        const booleanActuators: (keyof ActuatorState)[] = [
-          'fan1',
-          'fan2',
-          'irrigation',
-          'window',
-          'lock',
-          'lighting',
-          'camera',
-        ];
-
         actuatorList.forEach((actuator: Actuator) => {
-          // Pas besoin de vérifier Object.keys, car actuator.type est déjà keyof ActuatorState
-          if (booleanActuators.includes(actuator.type)) {
-            initialState[actuator.type] = actuator.value === 1;
+          const type = actuator.type as keyof ActuatorState;
+          if (isBooleanActuator(type)) {
+            initialState[type] = actuator.value === 1;
           } else {
-            initialState[actuator.type] = actuator.value;
+            initialState[type] = actuator.value;
           }
         });
         setActuators(initialState);

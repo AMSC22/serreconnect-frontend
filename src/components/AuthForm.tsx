@@ -27,20 +27,15 @@ const AuthForm = ({ mode, onSubmit }: AuthFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('AuthForm: soumission du formulaire', { mode, email, username, acceptTerms });
     setError('');
     if (!acceptTerms) {
       setError("Vous devez accepter les conditions d'utilisation.");
-      console.log('AuthForm: erreur - conditions non acceptées');
       return;
     }
     const data = mode === 'login' ? { email, password } : { username, email, password };
-    console.log('AuthForm: envoi des données', data);
     const success = await onSubmit(data);
-    console.log('AuthForm: résultat de la soumission, success =', success);
     if (!success) {
       setError(mode === 'login' ? 'Identifiants incorrects' : 'Inscription échouée');
-      console.log('AuthForm: erreur affichée', error);
     }
   };
 

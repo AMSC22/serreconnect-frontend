@@ -25,7 +25,6 @@ export const useSettings = (userId: string, greenhouseId: string) => {
         setBadges(badgesData);
         setError(null);
       } catch (err: any) {
-        console.error('useSettings: erreur lors de la récupération des données', err);
         setError(err.message || 'Erreur lors de la récupération des paramètres et badges');
       } finally {
         setLoading(false);
@@ -41,7 +40,6 @@ export const useSettings = (userId: string, greenhouseId: string) => {
       const updatedSettings = await settingsService.updateSettingsUser(settings.id, newSettings);
       setSettings(updatedSettings);
     } catch (err: any) {
-      console.error('useSettings: erreur lors de la mise à jour des paramètres', err);
       setError(err.message || 'Erreur lors de la mise à jour des paramètres');
     }
   };
@@ -51,7 +49,6 @@ export const useSettings = (userId: string, greenhouseId: string) => {
       const newBadge = await badgeService.createBadge({ name, user_id: userId, greenhouse_id: greenhouseId });
       setBadges((prev) => [...prev, newBadge]);
     } catch (err: any) {
-      console.error('useSettings: erreur lors de l’ajout du badge', err);
       setError(err.message || 'Erreur lors de l’ajout du badge');
     }
   };
@@ -61,7 +58,6 @@ export const useSettings = (userId: string, greenhouseId: string) => {
       await badgeService.deleteBadge(id);
       setBadges((prev) => prev.filter((badge) => badge.id !== id));
     } catch (err: any) {
-      console.error('useSettings: erreur lors de la suppression du badge', err);
       setError(err.message || 'Erreur lors de la suppression du badge');
     }
   };
