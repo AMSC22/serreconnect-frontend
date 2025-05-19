@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { greenhouseService } from '../services/greenhouse_service';
 import { settingsService } from '../services/settings_service';
+import { actuatorService } from '../services/actuator_service';
 import { Settings } from '../types/Settings';
-import LoadingSpinner from '../components/LoadingSpinner';
 import { Greenhouse } from '../types/Greenhouse';
+import { ActuatorState } from '../types/Actuator';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const GreenhouseCreate = () => {
   const { user } = useAuth();
@@ -15,11 +17,24 @@ const GreenhouseCreate = () => {
     description: '',
     location: '',
   });
+  const [actuators, setActuators] = useState<ActuatorState>({
+    fan1: false,
+    fan2: false,
+    irrigation: false,
+    window: false,
+    lock: false,
+    lighting: false,
+    heating: 22,
+    camera: false,
+    ventilation: 60,
+    cameraAngle: 0,
+    cameraZoom: 1,
+  });
   const [settings, setSettings] = useState<Partial<Settings>>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  
-  // Récupérer les paramètres par défaut et les définir comme valeurs initiales
+
+  // Récupérer les paramètres par défaut
   useEffect(() => {
     const fetchDefaultSettings = async () => {
       try {
@@ -56,7 +71,12 @@ const GreenhouseCreate = () => {
     setSettings((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Valider les paramètres personnalisés
+  // Gérer les changements dans les actionneurs
+  const handleActuatorChange = (field: keyof ActuatorState, value: number | boolean) => {
+    setActuators((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Valider les paramètres
   const validateSettings = (settings: Partial<Settings>): string | null => {
     const checks = [
       { min: settings.temperature_min, max: settings.temperature_max, label: 'Température' },
@@ -72,11 +92,27 @@ const GreenhouseCreate = () => {
       }
     }
 
-    // Vérifier que CO2 max est positif
     if (settings.co2_level_max !== undefined && settings.co2_level_max <= 0) {
       return 'La valeur maximale de CO2 doit être positive.';
     }
 
+    return null;
+  };
+
+  // Valider les actionneurs
+  const validateActuators = (actuators: ActuatorState): string | null => {
+    if (actuators.heating < 0 || actuators.heating > 100) {
+      return 'La température de chauffage doit être entre 0 et 100°C.';
+    }
+    if (actuators.ventilation < 0 || actuators.ventilation > 100) {
+      return 'La ventilation doit être entre 0 et 100%.';
+    }
+    if (actuators.cameraAngle < -180 || actuators.cameraAngle > 180) {
+      return 'L’angle de la caméra doit être entre -180 et 180 degrés.';
+    }
+    if (actuators.cameraZoom < 1 || actuators.cameraZoom > 10) {
+      return 'Le zoom de la caméra doit être entre 1 et 10.';
+    }
     return null;
   };
 
@@ -94,9 +130,17 @@ const GreenhouseCreate = () => {
 
     try {
       // Valider les paramètres
-      const validationError = validateSettings(settings);
-      if (validationError) {
-        setError(validationError);
+      const settingsError = validateSettings(settings);
+      if (settingsError) {
+        setError(settingsError);
+        setLoading(false);
+        return;
+      }
+
+      // Valider les actionneurs
+      const actuatorsError = validateActuators(actuators);
+      if (actuatorsError) {
+        setError(actuatorsError);
         setLoading(false);
         return;
       }
@@ -108,7 +152,7 @@ const GreenhouseCreate = () => {
       };
       const newGreenhouse = await greenhouseService.createGreenhouse(greenhouseData);
 
-      // Créer les paramètres pour la serre (par défaut ou modifiés)
+      // Créer les paramètres
       const newSettings: Partial<Settings> = {
         ...settings,
         greenhouse_id: newGreenhouse.id,
@@ -116,15 +160,33 @@ const GreenhouseCreate = () => {
       };
       await settingsService.createSettings(newSettings);
 
+      // Créer un document pour chaque actionneur
+      const actuatorTypes: (keyof ActuatorState)[] = [
+        'fan1',
+        'fan2',
+        'irrigation',
+        'window',
+        'lock',
+        'lighting',
+        'heating',
+        'camera',
+        'ventilation',
+        'cameraAngle',
+        'cameraZoom',
+      ];
+
+      for (const type of actuatorTypes) {
+        const value = typeof actuators[type] === 'boolean' ? (actuators[type] ? 1 : 0) : actuators[type];
+        await actuatorService.createActuator(newGreenhouse.id, type, Number(value));
+      }
+
       navigate(`/greenhouse/${newGreenhouse.id}`);
     } catch (err: any) {
-      console.error('GreenhouseCreate: erreur lors de la création de la serre', err);
-      setError(err.message || 'Erreur lors de la création de la serre.');
-    } finally {
+      console.error('GreenhouseCreate: erreur lors de la création', err);
+      setError(err.message || 'Erreur lors de la création de la serre, des paramètres ou des actionneurs.');
       setLoading(false);
     }
   };
-
 
   if (loading) return <LoadingSpinner />;
 
@@ -143,6 +205,7 @@ const GreenhouseCreate = () => {
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             required
+            placeholder="Entrez le nom de la serre"
             className="mt-1 w-full p-2 border rounded-md"
           />
         </div>
@@ -155,6 +218,7 @@ const GreenhouseCreate = () => {
             type="text"
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            placeholder="Entrez une description (optionnel)"
             className="mt-1 w-full p-2 border rounded-md"
           />
         </div>
@@ -167,6 +231,7 @@ const GreenhouseCreate = () => {
             type="text"
             value={formData.location}
             onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+            placeholder="Entrez la localisation (optionnel)"
             className="mt-1 w-full p-2 border rounded-md"
           />
         </div>
@@ -181,59 +246,124 @@ const GreenhouseCreate = () => {
           ].map((sensor) => (
             <React.Fragment key={sensor.min}>
               <div>
-                <label className="block text-sm font-medium text-gray-700">{sensor.label} min</label>
+                <label htmlFor={`${sensor.min}`} className="block text-sm font-medium text-gray-700">
+                  {sensor.label} min
+                </label>
                 <input
+                  id={`${sensor.min}`}
                   type="number"
-                  value={settings[sensor.min as keyof Settings] ?? ''}
+                  value={Number(settings[sensor.min as keyof Settings] ?? '')}
                   onChange={(e) => handleSettingsChange(sensor.min as keyof Settings, Number(e.target.value))}
+                  placeholder={`Min ${sensor.label}`}
                   className="mt-1 w-full p-2 border rounded-md"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">{sensor.label} max</label>
+                <label htmlFor={`${sensor.max}`} className="block text-sm font-medium text-gray-700">
+                  {sensor.label} max
+                </label>
                 <input
+                  id={`${sensor.max}`}
                   type="number"
-                  value={settings[sensor.max as keyof Settings] ?? ''}
+                  value={Number(settings[sensor.max as keyof Settings] ?? '')}
                   onChange={(e) => handleSettingsChange(sensor.max as keyof Settings, Number(e.target.value))}
+                  placeholder={`Max ${sensor.label}`}
                   className="mt-1 w-full p-2 border rounded-md"
                 />
               </div>
             </React.Fragment>
           ))}
           <div>
-            <label className="block text-sm font-medium text-gray-700">CO2 max (ppm)</label>
+            <label htmlFor="co2_level_max" className="block text-sm font-medium text-gray-700">
+              CO2 max (ppm)
+            </label>
             <input
+              id="co2_level_max"
               type="number"
               value={settings.co2_level_max ?? ''}
               onChange={(e) => handleSettingsChange('co2_level_max', Number(e.target.value))}
+              placeholder="Max CO2 (ppm)"
               className="mt-1 w-full p-2 border rounded-md"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Fréquence des mesures (secondes)</label>
+            <label htmlFor="measurement_frequency" className="block text-sm font-medium text-gray-700">
+              Fréquence des mesures (secondes)
+            </label>
             <input
+              id="measurement_frequency"
               type="number"
               value={settings.measurement_frequency ?? ''}
               onChange={(e) => handleSettingsChange('measurement_frequency', Number(e.target.value))}
+              placeholder="Fréquence (secondes)"
               className="mt-1 w-full p-2 border rounded-md"
             />
           </div>
           <div className="flex items-center">
-            <label className="block text-sm font-medium text-gray-700">
-              Notifications par email
-            </label>
             <input
+              id="notify_by_email"
               type="checkbox"
               checked={settings.notify_by_email ?? false}
               onChange={(e) => handleSettingsChange('notify_by_email', e.target.checked)}
-              className="mt-1 ml-2"
+              className="mt-1 mr-2"
             />
+            <label htmlFor="notify_by_email" className="block text-sm font-medium text-gray-700">
+              Notifications par email
+            </label>
           </div>
+        </div>
+        <h2 className="text-xl font-semibold text-gray-700 mt-6">Configuration des actionneurs</h2>
+        <div className="grid grid-cols-2 gap-4">
+          {[
+            { label: 'Ventilateur 1', field: 'fan1', type: 'checkbox' },
+            { label: 'Ventilateur 2', field: 'fan2', type: 'checkbox' },
+            { label: 'Irrigation', field: 'irrigation', type: 'checkbox' },
+            { label: 'Fenêtre', field: 'window', type: 'checkbox' },
+            { label: 'Verrou', field: 'lock', type: 'checkbox' },
+            { label: 'Éclairage', field: 'lighting', type: 'checkbox' },
+            { label: 'Caméra', field: 'camera', type: 'checkbox' },
+            { label: 'Chauffage (°C)', field: 'heating', type: 'number', placeholder: 'Température (0-100)' },
+            { label: 'Ventilation (%)', field: 'ventilation', type: 'number', placeholder: 'Pourcentage (0-100)' },
+            { label: 'Angle de caméra (°)', field: 'cameraAngle', type: 'number', placeholder: 'Angle (-180 à 180)' },
+            { label: 'Zoom de caméra', field: 'cameraZoom', type: 'number', placeholder: 'Zoom (1-10)' },
+          ].map((actuator) => (
+            <div key={actuator.field} className="flex items-center">
+              {actuator.type === 'checkbox' ? (
+                <>
+                  <input
+                    id={actuator.field}
+                    type="checkbox"
+                    checked={actuators[actuator.field as keyof ActuatorState] as boolean}
+                    onChange={(e) => handleActuatorChange(actuator.field as keyof ActuatorState, e.target.checked)}
+                    className="mt-1 mr-2"
+                  />
+                  <label htmlFor={actuator.field} className="block text-sm font-medium text-gray-700">
+                    {actuator.label}
+                  </label>
+                </>
+              ) : (
+                <>
+                  <label htmlFor={actuator.field} className="block text-sm font-medium text-gray-700 mr-2">
+                    {actuator.label}
+                  </label>
+                  <input
+                    id={actuator.field}
+                    type="number"
+                    value={Number(actuators[actuator.field as keyof ActuatorState]) ?? ''}
+                    onChange={(e) => handleActuatorChange(actuator.field as keyof ActuatorState, Number(e.target.value))}
+                    placeholder={actuator.placeholder}
+                    className="mt-1 w-32 p-2 border rounded-md"
+                  />
+                </>
+              )}
+            </div>
+          ))}
         </div>
         <div className="flex space-x-4">
           <button
             type="submit"
-            className="py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700"
+            disabled={loading}
+            className="py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400"
           >
             Créer
           </button>
