@@ -8,10 +8,8 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user } = useAuth();
-  console.log('ProtectedRoute: user =', user);
-
+  
   if (!user) {
-    console.log('Utilisateur non connecté, redirection vers /login');
     return <Navigate to="/login" replace />;
   }
 

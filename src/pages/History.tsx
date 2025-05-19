@@ -31,7 +31,6 @@ const History = () => {
         setSettings(settingsData);
         setError(null);
       } catch (err: any) {
-        console.error("History: erreur lors de la récupération de l'historique', err");
         setError(err.message || "Erreur lors de la récupération de l'historique");
       } finally {
         setLoading(false);
@@ -44,7 +43,6 @@ const History = () => {
   if (loading) return <LoadingSpinner />;
   if (error) return <p className="text-red-500">{error}</p>;
 
-  console.log("history = ", history);
   return (
     <div className="container mx-auto p-4 space-y-6">
       <h1 className="text-3xl font-bold text-green-600">Historique</h1>

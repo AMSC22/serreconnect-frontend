@@ -15,7 +15,7 @@ const AlertCard = ({ alert, onMarkAsRead }: AlertCardProps) => {
         onMarkAsRead(alert.id);
       }
     } catch (error: any) {
-      console.error('Erreur lors de la résolution de l’alerte:', error.message);
+      throw error("Erreur lors de la résolution de l'alerte:", error.message);
     }
   };
 
