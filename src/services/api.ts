@@ -9,6 +9,14 @@ const api: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Ajoutez cette configuration pour gérer les redirections
+  maxRedirects: 5,
+  // Cette fonction transforme les URL de redirection pour assurer qu'elles utilisent HTTPS
+  beforeRedirect: (options, { headers }) => {
+    if (options.href && options.href.startsWith('http:')) {
+      options.href = options.href.replace('http:', 'https:');
+    }
+  }
 });
 
 // Intercepteur pour ajouter le JWT à chaque requête
