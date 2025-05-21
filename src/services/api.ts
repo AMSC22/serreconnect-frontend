@@ -9,14 +9,6 @@ const api: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  // Ajoutez cette configuration pour gérer les redirections
-  maxRedirects: 5,
-  // Cette fonction transforme les URL de redirection pour assurer qu'elles utilisent HTTPS
-  beforeRedirect: (options, { headers }) => {
-    if (options.href && options.href.startsWith('http:')) {
-      options.href = options.href.replace('http:', 'https:');
-    }
-  }
 });
 
 // Intercepteur pour ajouter le JWT à chaque requête
@@ -46,7 +38,7 @@ api.interceptors.request.use(
 // Intercepteur pour gérer les erreurs (ex. : 401 Unauthorized)
 api.interceptors.response.use(
   response => response,
-  error => {
+  async (error) => {
     // Vérifier si c'est une erreur 401 (Non autorisé)
     if (error.response && error.response.status === 401) {
       // Récupérer la page actuelle (sans le domaine)
@@ -58,6 +50,35 @@ api.interceptors.response.use(
       }
     }
     
+    // Si c'est une redirection (status 3xx)
+    if (error.response && error.response.status >= 300 && error.response.status < 400) {
+      // Récupérer l'URL de redirection
+      const redirectUrl = error.response.headers.location;
+      if (redirectUrl) {
+        // Forcer HTTPS
+        const secureRedirectUrl = redirectUrl.replace(/^http:/, 'https:');
+        
+        // Récupérer la méthode et les données de la requête originale
+        const originalConfig = error.config;
+        
+        // Faire une nouvelle requête vers l'URL sécurisée
+        try {
+          if (originalConfig.method === 'post') {
+            return await axios.post(secureRedirectUrl, originalConfig.data, {
+              headers: originalConfig.headers
+            });
+          } else if (originalConfig.method === 'get') {
+            return await axios.get(secureRedirectUrl, {
+              headers: originalConfig.headers
+            });
+          }
+          // Ajouter d'autres méthodes si nécessaire
+        } catch (redirectError) {
+          return Promise.reject(redirectError);
+        }
+      }
+    }
+
     return Promise.reject(error);
   }
 );
