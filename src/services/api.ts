@@ -15,6 +15,12 @@ const api: AxiosInstance = axios.create({
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const publicEndpoints = ['/auth/login', '/users'];
+    // Force HTTPS
+    if (config.url && config.baseURL) {
+      if (config.baseURL.startsWith('http:')) {
+        config.baseURL = config.baseURL.replace('http:', 'https:');
+      }
+    }
     if (!publicEndpoints.includes(config.url || '')) {
       const token = localStorage.getItem('access_token');
       if (token) {
