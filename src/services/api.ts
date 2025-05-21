@@ -49,18 +49,19 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     }
-    
+    console.log("error.response = ", error.response, error.response.status);
     // Si c'est une redirection (status 3xx)
     if (error.response && error.response.status >= 300 && error.response.status < 400) {
       // Récupérer l'URL de redirection
       const redirectUrl = error.response.headers.location;
+      console.log("redirectUrl = ", redirectUrl);
       if (redirectUrl) {
         // Forcer HTTPS
         const secureRedirectUrl = redirectUrl.replace(/^http:/, 'https:');
         
         // Récupérer la méthode et les données de la requête originale
         const originalConfig = error.config;
-        
+        console.log("originalConfig = ", originalConfig);
         // Faire une nouvelle requête vers l'URL sécurisée
         try {
           if (originalConfig.method === 'post') {
