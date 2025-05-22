@@ -6,7 +6,7 @@ export const historyService = {
   async getAllHistory(): Promise<HistoricalData[]> {
     // Note : Réservé aux administrateurs (GET /api/v1/history)
     try {
-      const response: AxiosResponse<HistoricalData[]> = await api.get('/history');
+      const response: AxiosResponse<HistoricalData[]> = await api.get('/history/');
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.detail || 'Erreur lors de la récupération des historiques');
@@ -63,7 +63,7 @@ export const historyService = {
 
   async createHistory(history: HistoryCreate): Promise<HistoricalData> {
     try {
-      const response: AxiosResponse<HistoricalData> = await api.post('/history', history);
+      const response: AxiosResponse<HistoricalData> = await api.post('/history/', history);
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.detail || 'Erreur lors de la création de l’historique');

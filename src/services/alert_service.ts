@@ -6,7 +6,7 @@ export const alertService = {
   async getAllAlerts(): Promise<Alert[]> {
     // Note : Réservé aux administrateurs (GET /api/v1/alerts)
     try {
-      const response: AxiosResponse<Alert[]> = await api.get('/alerts');
+      const response: AxiosResponse<Alert[]> = await api.get('/alerts/');
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.detail || 'Erreur lors de la récupération des alertes');
