@@ -25,7 +25,7 @@ export const badgeService = {
 
   async createBadge(badge: BadgeCreate): Promise<Badge> {
     try {
-      const response: AxiosResponse<Badge> = await api.post('/badges', badge);
+      const response: AxiosResponse<Badge> = await api.post('/badges/', badge);
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.detail || 'Erreur lors de la création du badge');

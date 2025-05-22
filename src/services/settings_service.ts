@@ -5,7 +5,7 @@ import { Settings, SettingsCreate, SettingsUpdate } from '../types/Settings';
 export const settingsService = {
   async getAllSettings(): Promise<Settings[]> {
     try {
-      const response: AxiosResponse<Settings[]> = await api.get('/settings');
+      const response: AxiosResponse<Settings[]> = await api.get('/settings/');
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.detail || 'Erreur lors de la récupération des paramètres');

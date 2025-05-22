@@ -6,7 +6,7 @@ export const greenhouseService = {
   async getAllGreenhouses(): Promise<Greenhouse[]> {
     // Note : Réservé aux administrateurs (GET /api/v1/greenhouses)
     try {
-      const response: AxiosResponse<Greenhouse[]> = await api.get('/greenhouses');
+      const response: AxiosResponse<Greenhouse[]> = await api.get('/greenhouses/');
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.detail || 'Erreur lors de la récupération des serres');
@@ -44,7 +44,7 @@ export const greenhouseService = {
 
   async createGreenhouse(greenhouse: Partial<GreenhouseCreate>): Promise<Greenhouse> {
     try {
-      const response: AxiosResponse<Greenhouse> = await api.post('/greenhouses', greenhouse);
+      const response: AxiosResponse<Greenhouse> = await api.post('/greenhouses/', greenhouse);
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.detail || 'Erreur lors de la création de la serre');
